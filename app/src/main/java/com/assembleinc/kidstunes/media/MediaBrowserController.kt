@@ -2,7 +2,7 @@ package com.assembleinc.kidstunes.media
 
 import android.content.*
 import android.os.RemoteException
-import android.support.v4.content.LocalBroadcastManager
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
@@ -172,7 +172,7 @@ open class MediaBrowserController(val context: Context) {
             intent?.let {
                 if (it.action == MediaPlaybackService.ACTION_CURRENT_ITEM_CHANGED) {
                     it.extras?.let { extras ->
-                        val song = extras.getParcelable(MediaPlaybackService.EXTRA_CURRENT_ITEM) as Song
+                        val song = extras.getParcelable<Song>(MediaPlaybackService.EXTRA_CURRENT_ITEM)!!
                         performOnAllCallbacks(object : CallbackCommand {
                             override fun perform(callback: MediaControllerCompat.Callback) {
                                 callback.onMetadataChanged(song.toMediaMetadataCompat())

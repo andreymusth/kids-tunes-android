@@ -8,15 +8,15 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Build
-import android.support.annotation.RequiresApi
-import android.support.v4.app.NotificationCompat
-import android.support.v4.content.ContextCompat
-import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import com.assembleinc.kidstunes.ui.main.MainActivity
+import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.media.session.MediaButtonReceiver
 import com.assembleinc.kidstunes.R
 import com.assembleinc.kidstunes.model.Song
+import com.assembleinc.kidstunes.ui.main.MainActivity
 import com.squareup.picasso.Picasso
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
@@ -42,54 +42,78 @@ class MediaNotificationManager(private val mediaPlaybackService: MediaPlaybackSe
     // region MediaNotificationManager
 
     init {
-        notificationManager = mediaPlaybackService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager =
+            mediaPlaybackService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancelAll()
 
         playAction = NotificationCompat.Action(
             R.drawable.baseline_play_arrow_24,
             mediaPlaybackService.getString(R.string.play),
-            MediaButtonReceiver.buildMediaButtonPendingIntent(mediaPlaybackService, PlaybackStateCompat.ACTION_PLAY)
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                mediaPlaybackService,
+                PlaybackStateCompat.ACTION_PLAY
+            )
         )
 
         pauseAction = NotificationCompat.Action(
             R.drawable.baseline_pause_24,
             mediaPlaybackService.getString(R.string.pause),
-            MediaButtonReceiver.buildMediaButtonPendingIntent(mediaPlaybackService, PlaybackStateCompat.ACTION_PAUSE)
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                mediaPlaybackService,
+                PlaybackStateCompat.ACTION_PAUSE
+            )
         )
 
         previousAction = NotificationCompat.Action(
             R.drawable.baseline_fast_rewind_24,
             mediaPlaybackService.getString(R.string.previous_track),
-            MediaButtonReceiver.buildMediaButtonPendingIntent(mediaPlaybackService, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                mediaPlaybackService,
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
         )
 
         nextAction = NotificationCompat.Action(
             R.drawable.baseline_fast_forward_24,
             mediaPlaybackService.getString(R.string.next_track),
-            MediaButtonReceiver.buildMediaButtonPendingIntent(mediaPlaybackService, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
+            MediaButtonReceiver.buildMediaButtonPendingIntent(
+                mediaPlaybackService,
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+            )
         )
     }
 
-    fun getNotification(song: Song, token: MediaSessionCompat.Token, state: Int, currentPosition: Long): Notification {
+    fun getNotification(
+        song: Song,
+        token: MediaSessionCompat.Token,
+        state: Int,
+        currentPosition: Long
+    ): Notification {
         val builder = buildNotification(song, token, state, currentPosition)
         return builder.build()
     }
 
-    private fun buildNotification(song: Song, token: MediaSessionCompat.Token, state: Int,
-        currentPosition: Long): NotificationCompat.Builder {
+    private fun buildNotification(
+        song: Song, token: MediaSessionCompat.Token, state: Int,
+        currentPosition: Long
+    ): NotificationCompat.Builder {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) createChannel()
 
-        val isPlaying = (state == PlaybackStateCompat.STATE_PLAYING) or (state == PlaybackStateCompat.STATE_BUFFERING)
+        val isPlaying =
+            (state == PlaybackStateCompat.STATE_PLAYING) or (state == PlaybackStateCompat.STATE_BUFFERING)
 
         val builder = NotificationCompat.Builder(mediaPlaybackService, CHANNEL_ID)
         builder.setStyle(
-            android.support.v4.media.app.NotificationCompat.MediaStyle()
+            androidx.media.app.NotificationCompat.MediaStyle()
                 .setMediaSession(token)
                 .setShowActionsInCompactView(0, 1, 2)
                 .setShowCancelButton(true)
                 .setCancelButtonIntent(
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(mediaPlaybackService, PlaybackStateCompat.ACTION_STOP)
+                    MediaButtonReceiver.buildMediaButtonPendingIntent(
+                        mediaPlaybackService,
+                        PlaybackStateCompat.ACTION_STOP
+                    )
                 )
         )
             .setColor(ContextCompat.getColor(mediaPlaybackService, R.color.colorAccent))
@@ -151,7 +175,12 @@ class MediaNotificationManager(private val mediaPlaybackService: MediaPlaybackSe
     private fun createContentIntent(): PendingIntent {
         val openUI = Intent(mediaPlaybackService, MainActivity::class.java)
         openUI.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-        return PendingIntent.getActivity(mediaPlaybackService, REQUEST_CODE, openUI, PendingIntent.FLAG_CANCEL_CURRENT)
+        return PendingIntent.getActivity(
+            mediaPlaybackService,
+            REQUEST_CODE,
+            openUI,
+            PendingIntent.FLAG_CANCEL_CURRENT
+        )
     }
 
     // endregion

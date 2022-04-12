@@ -2,10 +2,10 @@ package com.assembleinc.kidstunes.media
 
 import android.content.Intent
 import android.os.Bundle
-import android.support.v4.content.ContextCompat
-import android.support.v4.content.LocalBroadcastManager
+import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaBrowserServiceCompat
+import androidx.media.MediaBrowserServiceCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import com.android.volley.RequestQueue
@@ -234,7 +234,7 @@ class MediaPlaybackService: MediaBrowserServiceCompat(), MediaPlayerController.L
                 System.loadLibrary("appleMusicSDK")
             } catch (e: Exception) {
                 Log.e(TAG, "Could not load library due to: ${Log.getStackTraceString(e)}")
-                throw e
+                //throw e
             }
         }
 

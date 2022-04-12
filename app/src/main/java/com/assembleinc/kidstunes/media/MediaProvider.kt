@@ -2,9 +2,9 @@ package com.assembleinc.kidstunes.media
 
 import android.content.Context
 import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaBrowserServiceCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.util.Log
+import androidx.media.MediaBrowserServiceCompat
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.RequestQueue
 import com.android.volley.Response
@@ -21,53 +21,58 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import org.json.JSONObject
 import java.util.*
-import kotlin.collections.HashMap
 
 
 /**
  * Created by Assemble, Inc. on 2019-05-16.
  */
-class MediaProvider(private val context: Context,
-                    private val requestQueue: RequestQueue,
-                    private val appleMusicTokenProvider: AppleMusicTokenProvider) {
+class MediaProvider(
+    private val context: Context,
+    private val requestQueue: RequestQueue,
+    private val appleMusicTokenProvider: AppleMusicTokenProvider
+) {
 
     private var topTracksMetadata = TreeMap<String, Song>()
     private var favoriteTracksMetadata = TreeMap<String, Song>()
     var favoriteTracksPlaylistIdentifier: String? = null
         private set
 
-    fun loadMediaItems(parentId: String, result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>) {
+    fun loadMediaItems(
+        parentId: String,
+        result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>
+    ) {
         result.detach()
         if (parentId == TOP_SONGS_ROOT_ID) {
             requestTopSongs(result)
-        }
-        else if (parentId == FAVORITES_ROOT_ID) {
+        } else if (parentId == FAVORITES_ROOT_ID) {
             requestPlaylists(result)
         }
     }
 
     private val authorizationHeaders: MutableMap<String, String>
-    get() {
-        val headers = HashMap<String, String>()
-        headers["Authorization"] = "Bearer ${appleMusicTokenProvider.developerToken}"
-        return headers
-    }
+        get() {
+            val headers = HashMap<String, String>()
+            headers["Authorization"] = "Bearer ${appleMusicTokenProvider.developerToken}"
+            return headers
+        }
 
     private val musicTokenHeaders: MutableMap<String, String>
-    get() {
-        val headers = authorizationHeaders
-        headers["Music-User-Token"] = appleMusicTokenProvider.userToken ?: ""
-        return headers
-    }
+        get() {
+            val headers = authorizationHeaders
+            headers["Music-User-Token"] = appleMusicTokenProvider.userToken ?: ""
+            return headers
+        }
 
     private fun requestTopSongs(result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>) {
-        val url = "https://api.music.apple.com/v1/catalog/us/charts?types=$MEDIA_TYPE_SONGS&genre=$GENRE_KIDS&limit=100&offset=0"
-        val request = object: StringRequest(
+        val url =
+            "https://api.music.apple.com/v1/catalog/us/charts?types=$MEDIA_TYPE_SONGS&genre=$GENRE_KIDS&limit=100&offset=0"
+        val request = object : StringRequest(
             Method.GET, url,
             Response.Listener { response ->
                 doAsync {
                     val jsonObject = JsonParser().parse(response).asJsonObject
-                    val songsData = jsonObject.get("results").asJsonObject.get("songs").asJsonArray.get(0).asJsonObject
+                    val songsData =
+                        jsonObject.get("results").asJsonObject.get("songs").asJsonArray.get(0).asJsonObject
                     val songs = songsData.get("data").asJsonArray ?: JsonArray()
                     val mediaItems = ArrayList<MediaBrowserCompat.MediaItem>()
                     topTracksMetadata = TreeMap()
@@ -81,21 +86,36 @@ class MediaProvider(private val context: Context,
                         val durationInMillis = songAttributes.get("durationInMillis").asLong
                         val artwork = songAttributes.get("artwork").asJsonObject
                         val imageSize = (context.resources.displayMetrics.density * 48).toInt()
-                        val artworkUrl = artwork.get("url").asString.replace("{w}", imageSize.toString()).replace("{h}", imageSize.toString())
+                        val artworkUrl =
+                            artwork.get("url").asString.replace("{w}", imageSize.toString())
+                                .replace("{h}", imageSize.toString())
                         val fullImageSize = (context.resources.displayMetrics.density * 128).toInt()
-                        val fullArtworkUrl = artwork.get("url").asString.replace("{w}", fullImageSize.toString()).replace("{h}", fullImageSize.toString())
+                        val fullArtworkUrl =
+                            artwork.get("url").asString.replace("{w}", fullImageSize.toString())
+                                .replace("{h}", fullImageSize.toString())
                         val backgroundColor = artwork.get("bgColor").asString
                         val textColor1 = artwork.get("textColor1").asString
                         val textColor2 = artwork.get("textColor2").asString
 
-                        val song = Song(songPlaybackId, songName, artistName, albumName, artworkUrl, fullArtworkUrl, durationInMillis)
+                        val song = Song(
+                            songPlaybackId,
+                            songName,
+                            artistName,
+                            albumName,
+                            artworkUrl,
+                            fullArtworkUrl,
+                            durationInMillis
+                        )
                         song.backgroundColorHex = "#$backgroundColor"
                         song.textColorHex = "#$textColor1"
                         song.textColorAccentHex = "#$textColor2"
                         topTracksMetadata[songPlaybackId] = song
 
                         val metadata = song.toMediaMetadataCompat()
-                        val mediaItem = MediaBrowserCompat.MediaItem(metadata.description, MediaBrowserCompat.MediaItem.FLAG_PLAYABLE)
+                        val mediaItem = MediaBrowserCompat.MediaItem(
+                            metadata.description,
+                            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+                        )
                         mediaItems.add(mediaItem)
                     }
 
@@ -107,14 +127,16 @@ class MediaProvider(private val context: Context,
                     val mediaItems = ArrayList<MediaBrowserCompat.MediaItem>()
                     topTracksMetadata.forEach {
                         val metadata = it.value.toMediaMetadataCompat()
-                        val mediaItem = MediaBrowserCompat.MediaItem(metadata.description, MediaBrowserCompat.MediaItem.FLAG_PLAYABLE)
+                        val mediaItem = MediaBrowserCompat.MediaItem(
+                            metadata.description,
+                            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+                        )
                         mediaItems.add(mediaItem)
                     }
 
                     uiThread { result.sendResult(mediaItems) }
                 }
-            })
-        {
+            }) {
             override fun getHeaders(): MutableMap<String, String> {
                 return authorizationHeaders
             }
@@ -122,14 +144,15 @@ class MediaProvider(private val context: Context,
         request.retryPolicy = DefaultRetryPolicy(
             DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
             DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
         request.setShouldCache(false)
         requestQueue.add(request)
     }
 
     private fun requestPlaylists(result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>) {
         val url = "https://api.music.apple.com/v1/me/library/playlists"
-        val request = object: StringRequest(Method.GET, url,
+        val request = object : StringRequest(Method.GET, url,
             Response.Listener { response ->
                 doAsync {
                     val jsonObject = JsonParser().parse(response).asJsonObject
@@ -143,8 +166,7 @@ class MediaProvider(private val context: Context,
                         val playlistId = (playlist as JsonObject).get("id").asString
                         favoriteTracksPlaylistIdentifier = playlistId
                         requestFavoriteSongs(result, playlistId)
-                    }
-                    else {
+                    } else {
                         createPlayList(result)
                     }
                 }
@@ -153,29 +175,34 @@ class MediaProvider(private val context: Context,
                 Log.e(TAG, "$error")
                 val mediaItems = ArrayList<MediaBrowserCompat.MediaItem>()
                 result.sendResult(mediaItems)
-            })
-        {
+            }) {
             override fun getHeaders(): MutableMap<String, String> {
                 return musicTokenHeaders
             }
         }
-        request.retryPolicy = DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
+        request.retryPolicy = DefaultRetryPolicy(
+            DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
             DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
         request.setShouldCache(false)
         requestQueue.add(request)
     }
 
-    private fun requestFavoriteSongs(result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>, playlistId: String) {
+    private fun requestFavoriteSongs(
+        result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>,
+        playlistId: String
+    ) {
         val url = "https://api.music.apple.com/v1/me/library/playlists/$playlistId/tracks"
-        val request = object: StringRequest(Method.GET, url,
+        val request = object : StringRequest(Method.GET, url,
             Response.Listener { response ->
                 doAsync {
                     val jsonObject = JsonParser().parse(response).asJsonObject
                     val tracks = jsonObject.get("data").asJsonArray
                     val tracksIdentifiers = tracks.mapNotNull {
                         val attributes = it.asJsonObject.get("attributes").asJsonObject
-                        val playParams = if (attributes.has("playParams")) attributes.get("playParams").asJsonObject else JsonObject()
+                        val playParams =
+                            if (attributes.has("playParams")) attributes.get("playParams").asJsonObject else JsonObject()
                         if (playParams.has("catalogId")) playParams.get("catalogId").asString else null
                     }
 
@@ -186,22 +213,28 @@ class MediaProvider(private val context: Context,
                 Log.e(TAG, "$error")
                 val mediaItems = ArrayList<MediaBrowserCompat.MediaItem>()
                 result.sendResult(mediaItems)
-            })
-        {
+            }) {
             override fun getHeaders(): MutableMap<String, String> {
                 return musicTokenHeaders
             }
         }
-        request.retryPolicy = DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
+        request.retryPolicy = DefaultRetryPolicy(
+            DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
             DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
         request.setShouldCache(false)
         requestQueue.add(request)
     }
 
-    private fun requestCatalogSongs(tracksIdentifiers: List<String>, result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>) {
-        val url = "https://api.music.apple.com/v1/catalog/us/songs?ids=${tracksIdentifiers.joinToString(separator = ",")}&l=en-US"
-        val request = object: StringRequest(Method.GET, url,
+    private fun requestCatalogSongs(
+        tracksIdentifiers: List<String>,
+        result: MediaBrowserServiceCompat.Result<List<MediaBrowserCompat.MediaItem>>
+    ) {
+        val url = "https://api.music.apple.com/v1/catalog/us/songs?ids=${
+            tracksIdentifiers.joinToString(separator = ",")
+        }&l=en-US"
+        val request = object : StringRequest(Method.GET, url,
             Response.Listener { response ->
                 doAsync {
                     val jsonObject = JsonParser().parse(response).asJsonObject
@@ -222,21 +255,36 @@ class MediaProvider(private val context: Context,
                         val durationInMillis = songAttributes.get("durationInMillis").asLong
                         val artwork = songAttributes.get("artwork").asJsonObject
                         val imageSize = (context.resources.displayMetrics.density * 48).toInt()
-                        val artworkUrl = artwork.get("url").asString.replace("{w}", imageSize.toString()).replace("{h}", imageSize.toString())
+                        val artworkUrl =
+                            artwork.get("url").asString.replace("{w}", imageSize.toString())
+                                .replace("{h}", imageSize.toString())
                         val fullImageSize = (context.resources.displayMetrics.density * 128).toInt()
-                        val fullArtworkUrl = artwork.get("url").asString.replace("{w}", fullImageSize.toString()).replace("{h}", fullImageSize.toString())
+                        val fullArtworkUrl =
+                            artwork.get("url").asString.replace("{w}", fullImageSize.toString())
+                                .replace("{h}", fullImageSize.toString())
                         val backgroundColor = artwork.get("bgColor").asString
                         val textColor1 = artwork.get("textColor1").asString
                         val textColor2 = artwork.get("textColor2").asString
 
-                        val song = Song(songPlaybackId, songName, artistName, albumName, artworkUrl, fullArtworkUrl, durationInMillis)
+                        val song = Song(
+                            songPlaybackId,
+                            songName,
+                            artistName,
+                            albumName,
+                            artworkUrl,
+                            fullArtworkUrl,
+                            durationInMillis
+                        )
                         song.backgroundColorHex = "#$backgroundColor"
                         song.textColorHex = "#$textColor1"
                         song.textColorAccentHex = "#$textColor2"
                         favoriteTracksMetadata[songPlaybackId] = song
 
                         val metadata = song.toMediaMetadataCompat()
-                        val mediaItem = MediaBrowserCompat.MediaItem(metadata.description, MediaBrowserCompat.MediaItem.FLAG_PLAYABLE)
+                        val mediaItem = MediaBrowserCompat.MediaItem(
+                            metadata.description,
+                            MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+                        )
                         mediaItems.add(mediaItem)
                     }
 
@@ -250,15 +298,16 @@ class MediaProvider(private val context: Context,
                 Log.e(TAG, "$error")
                 val mediaItems = ArrayList<MediaBrowserCompat.MediaItem>()
                 result.sendResult(mediaItems)
-            })
-        {
+            }) {
             override fun getHeaders(): MutableMap<String, String> {
                 return musicTokenHeaders
             }
         }
-        request.retryPolicy = DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
+        request.retryPolicy = DefaultRetryPolicy(
+            DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
             DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
         request.setShouldCache(false)
         requestQueue.add(request)
     }
@@ -271,7 +320,7 @@ class MediaProvider(private val context: Context,
         val body = HashMap<String, HashMap<String, String>>()
         body["attributes"] = attributes
 
-        val request = object: JsonObjectRequest(Method.POST, url, JSONObject(body),
+        val request = object : JsonObjectRequest(Method.POST, url, JSONObject(body as Map<*, *>?),
             Response.Listener { response ->
                 doAsync {
                     val jsonObject = JsonParser().parse(response.toString()).asJsonObject
@@ -284,16 +333,17 @@ class MediaProvider(private val context: Context,
                 Log.e(TAG, "$error")
                 val mediaItems = ArrayList<MediaBrowserCompat.MediaItem>()
                 result.sendResult(mediaItems)
-            })
-            {
-                override fun getHeaders(): MutableMap<String, String> {
-                    return musicTokenHeaders
-                }
+            }) {
+            override fun getHeaders(): MutableMap<String, String> {
+                return musicTokenHeaders
             }
+        }
 
-        request.retryPolicy = DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
+        request.retryPolicy = DefaultRetryPolicy(
+            DefaultRetryPolicy.DEFAULT_TIMEOUT_MS * 2,
             DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
         request.setShouldCache(false)
         requestQueue.add(request)
     }

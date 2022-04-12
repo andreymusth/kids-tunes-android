@@ -13,7 +13,7 @@ import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import android.transition.AutoTransition
 import android.util.Log
 import android.view.View
@@ -165,7 +165,7 @@ class MediaPlayerActivity: AppCompatActivity() {
                         override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
                             if (resultCode == MediaSessionManager.RESULT_TRACK) {
                                 resultData?.let { bundle ->
-                                    val fetchedSong = bundle.getParcelable(MediaSessionManager.EXTRA_TRACK) as Song
+                                    val fetchedSong = bundle.getParcelable<Song>(MediaSessionManager.EXTRA_TRACK)!!
                                     bindSong(fetchedSong)
                                 }
                             }

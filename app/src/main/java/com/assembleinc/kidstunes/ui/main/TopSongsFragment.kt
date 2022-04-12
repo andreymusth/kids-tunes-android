@@ -5,17 +5,17 @@ import android.graphics.Outline
 import android.media.session.PlaybackState
 import android.os.Bundle
 import android.os.ResultReceiver
-import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.RecyclerView.SCROLL_STATE_IDLE
-import android.support.v7.widget.SimpleItemAnimator
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE
+import androidx.recyclerview.widget.SimpleItemAnimator
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -91,7 +91,8 @@ class TopSongsFragment : Fragment(), SectionsPagerAdapter.OnFragmentPageSelected
     private fun initRecyclerView(root: View) {
         val recyclerView = root.findViewById<RecyclerView>(R.id.recyclerView)
         recyclerView.adapter = songsAdapter
-        recyclerView.layoutManager = LinearLayoutManager(activity)
+        recyclerView.layoutManager =
+            LinearLayoutManager(activity)
         recyclerView.setHasFixedSize(true)
         (recyclerView.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
